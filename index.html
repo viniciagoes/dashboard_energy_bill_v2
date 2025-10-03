@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy Bill Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Loading Spinner -->
+    <div id="loading" class="loading-overlay hidden">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Authentication Pages -->
+    <div id="auth-container" class="auth-container">
+        <!-- Login Form -->
+        <div id="login-page" class="auth-page">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <h1>Energy Bill Manager</h1>
+                    <p>Sign in to your account</p>
+                </div>
+                <form id="login-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="login-email" class="form-label">Email</label>
+                        <input type="email" id="login-email" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password" class="form-label">Password</label>
+                        <input type="password" id="login-password" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn--primary btn--full-width">Sign In</button>
+                </form>
+                <div class="auth-footer">
+                    <p>Don't have an account? <a href="#" id="show-register">Sign up</a></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Register Form -->
+        <div id="register-page" class="auth-page hidden">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <h1>Create Account</h1>
+                    <p>Join Energy Bill Manager</p>
+                </div>
+                <form id="register-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="register-username" class="form-label">Username</label>
+                        <input type="text" id="register-username" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-email" class="form-label">Email</label>
+                        <input type="email" id="register-email" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password" class="form-label">Password</label>
+                        <input type="password" id="register-password" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn--primary btn--full-width">Create Account</button>
+                </form>
+                <div class="auth-footer">
+                    <p>Already have an account? <a href="#" id="show-login">Sign in</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="app-container" class="app-container hidden">
+        <!-- Navigation Bar -->
+        <nav class="navbar">
+            <div class="navbar-brand">
+                <h2>Energy Bill Manager</h2>
+            </div>
+            <div class="navbar-actions">
+                <button id="theme-toggle" class="btn btn--secondary btn--sm">🌙</button>
+                <div class="user-dropdown">
+                    <button id="user-menu-btn" class="user-menu-btn">
+                        <span id="user-name">User</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div id="user-menu" class="user-menu hidden">
+                        <a href="#" id="nav-profile">Profile</a>
+                        <a href="#" id="logout-btn">Logout</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <a href="#" id="nav-dashboard" class="nav-link active">
+                    📊 Dashboard
+                </a>
+                <a href="#" id="nav-bills" class="nav-link">
+                    📄 Bills
+                </a>
+                <a href="#" id="nav-admin" class="nav-link admin-only hidden">
+                    👥 Admin
+                    <span id="pending-badge" class="nav-badge hidden">0</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard View -->
+            <div id="dashboard-view" class="view">
+                <div class="view-header">
+                    <h1>Dashboard</h1>
+                    <div class="dashboard-filters">
+                        <select id="dashboard-period" class="form-control">
+                            <option value="all">All Time</option>
+                            <option value="year">This Year</option>
+                            <option value="month">This Month</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Overview Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">⚡</div>
+                        <div class="stat-content">
+                            <h3 id="total-consumption">0</h3>
+                            <p>Total kWh</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">💰</div>
+                        <div class="stat-content">
+                            <h3 id="average-cost">$0.00</h3>
+                            <p>Avg. Cost/kWh</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-content">
+                            <h3 id="total-bills">0</h3>
+                            <p>Total Bills</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⏰</div>
+                        <div class="stat-content">
+                            <h3 id="outstanding-balance">$0.00</h3>
+                            <p>Outstanding</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Stats (Admin Only) -->
+                <div id="admin-stats" class="stats-grid admin-only hidden">
+                    <div class="stat-card stat-card--warning">
+                        <div class="stat-icon">⏳</div>
+                        <div class="stat-content">
+                            <h3 id="pending-users">0</h3>
+                            <p>Pending Approvals</p>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-card--info">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-content">
+                            <h3 id="total-users">0</h3>
+                            <p>Total Users</p>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-card--success">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-content">
+                            <h3 id="approved-users">0</h3>
+                            <p>Approved Users</p>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-card--error">
+                        <div class="stat-icon">❌</div>
+                        <div class="stat-content">
+                            <h3 id="rejected-users">0</h3>
+                            <p>Rejected Users</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3>Monthly Consumption</h3>
+                        <div class="chart-container" style="position: relative; height: 300px;">
+                            <canvas id="consumption-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Cost Analysis</h3>
+                        <div class="chart-container" style="position: relative; height: 300px;">
+                            <canvas id="cost-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Provider Distribution</h3>
+                        <div class="chart-container" style="position: relative; height: 300px;">
+                            <canvas id="provider-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Payment Status</h3>
+                        <div class="chart-container" style="position: relative; height: 300px;">
+                            <canvas id="status-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bills View -->
+            <div id="bills-view" class="view hidden">
+                <div class="view-header">
+                    <h1>Energy Bills</h1>
+                    <button id="add-bill-btn" class="btn btn--primary">+ Add Bill</button>
+                </div>
+
+                <!-- Filters -->
+                <div class="filters-bar">
+                    <input type="search" id="bills-search" class="form-control" placeholder="Search bills...">
+                    <select id="provider-filter" class="form-control">
+                        <option value="">All Providers</option>
+                    </select>
+                    <select id="status-filter" class="form-control">
+                        <option value="">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="paid">Paid</option>
+                        <option value="overdue">Overdue</option>
+                    </select>
+                </div>
+
+                <!-- Bills Table -->
+                <div class="table-container">
+                    <table id="bills-table" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Provider</th>
+                                <th>Period</th>
+                                <th>Usage (kWh)</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Due Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Admin View -->
+            <div id="admin-view" class="view hidden">
+                <div class="view-header">
+                    <h1>User Management</h1>
+                    <div class="admin-actions">
+                        <button id="bulk-approve-btn" class="btn btn--primary btn--sm" disabled>Bulk Approve</button>
+                        <button id="bulk-reject-btn" class="btn btn--secondary btn--sm" disabled>Bulk Reject</button>
+                    </div>
+                </div>
+
+                <!-- Admin Filters -->
+                <div class="filters-bar">
+                    <input type="search" id="users-search" class="form-control" placeholder="Search users...">
+                    <select id="user-status-filter" class="form-control">
+                        <option value="">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                    <select id="user-role-filter" class="form-control">
+                        <option value="">All Roles</option>
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+
+                <!-- Users Table -->
+                <div class="table-container">
+                    <table id="users-table" class="data-table">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="select-all-users"></th>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Created Date</th>
+                                <th>Last Login</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Bill Form Modal -->
+    <div id="bill-modal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="bill-modal-title">Add Energy Bill</h2>
+                <button id="close-bill-modal" class="modal-close">&times;</button>
+            </div>
+            <form id="bill-form" class="modal-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="bill-provider" class="form-label">Provider</label>
+                        <input type="text" id="bill-provider" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bill-account" class="form-label">Account Number</label>
+                        <input type="text" id="bill-account" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bill-meter" class="form-label">Meter Number</label>
+                        <input type="text" id="bill-meter" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bill-period-start" class="form-label">Period Start</label>
+                        <input type="date" id="bill-period-start" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bill-period-end" class="form-label">Period End</label>
+                        <input type="date" id="bill-period-end" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bill-previous-reading" class="form-label">Previous Reading (kWh)</label>
+                        <input type="number" id="bill-previous-reading" class="form-control" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bill-current-reading" class="form-label">Current Reading (kWh)</label>
+                        <input type="number" id="bill-current-reading" class="form-control" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bill-rate" class="form-label">Rate per kWh ($)</label>
+                        <input type="number" id="bill-rate" class="form-control" step="0.00001" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bill-base-charge" class="form-label">Base Charge ($)</label>
+                        <input type="number" id="bill-base-charge" class="form-control" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bill-due-date" class="form-label">Due Date</label>
+                        <input type="date" id="bill-due-date" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bill-status" class="form-label">Payment Status</label>
+                        <select id="bill-status" class="form-control" required>
+                            <option value="pending">Pending</option>
+                            <option value="paid">Paid</option>
+                            <option value="overdue">Overdue</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="bill-payment-date" class="form-label">Payment Date (optional)</label>
+                        <input type="date" id="bill-payment-date" class="form-control">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Additional Charges</label>
+                    <div id="json-editor" class="json-editor">
+                        <div class="json-editor-header">
+                            <div class="json-editor-actions">
+                                <button type="button" id="add-root-key" class="btn btn--secondary btn--sm">Add Field</button>
+                                <button type="button" id="import-json" class="btn btn--outline btn--sm">Import JSON</button>
+                                <button type="button" id="export-json" class="btn btn--outline btn--sm">Export</button>
+                                <button type="button" id="clear-json" class="btn btn--outline btn--sm">Clear</button>
+                            </div>
+                            <div class="json-validation-status" id="json-validation"></div>
+                        </div>
+                        <div id="json-editor-content" class="json-editor-content">
+                            <div class="json-editor-empty">
+                                <p>No additional charges defined. Click "Add Field" to start.</p>
+                            </div>
+                        </div>
+                        <div class="json-preview-section">
+                            <h4>JSON Preview</h4>
+                            <pre id="json-preview" class="json-preview">{}</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bill-notes" class="form-label">Notes</label>
+                    <textarea id="bill-notes" class="form-control" rows="3"></textarea>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" id="cancel-bill" class="btn btn--outline">Cancel</button>
+                    <button type="submit" class="btn btn--primary">Save Bill</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- User Edit Modal -->
+    <div id="user-edit-modal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content modal-content--sm">
+            <div class="modal-header">
+                <h2>Edit User</h2>
+                <button id="close-user-edit-modal" class="modal-close">&times;</button>
+            </div>
+            <form id="user-edit-form" class="modal-body">
+                <div class="form-group">
+                    <label for="edit-username" class="form-label">Username</label>
+                    <input type="text" id="edit-username" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-email" class="form-label">Email</label>
+                    <input type="email" id="edit-email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-role" class="form-label">Role</label>
+                    <select id="edit-role" class="form-control" required>
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="cancel-user-edit" class="btn btn--outline">Cancel</button>
+                    <button type="submit" class="btn btn--primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reject User Modal -->
+    <div id="reject-modal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content modal-content--sm">
+            <div class="modal-header">
+                <h2>Reject User</h2>
+                <button id="close-reject-modal" class="modal-close">&times;</button>
+            </div>
+            <form id="reject-form" class="modal-body">
+                <div class="form-group">
+                    <label for="reject-reason" class="form-label">Rejection Reason</label>
+                    <textarea id="reject-reason" class="form-control" rows="4" placeholder="Please provide a reason for rejection..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="cancel-reject" class="btn btn--outline">Cancel</button>
+                    <button type="submit" class="btn btn--primary">Reject User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JSON Import Modal -->
+    <div id="json-import-modal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content modal-content--sm">
+            <div class="modal-header">
+                <h2>Import JSON</h2>
+                <button id="close-json-import-modal" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="json-import-textarea" class="form-label">Paste JSON here:</label>
+                    <textarea id="json-import-textarea" class="form-control" rows="8" placeholder='{"key": "value"}'></textarea>
+                </div>
+                <div id="json-import-error" class="json-error-message hidden"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-json-import" class="btn btn--outline">Cancel</button>
+                <button id="confirm-json-import" class="btn btn--primary">Import</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content modal-content--sm">
+            <div class="modal-header">
+                <h2>Confirm Delete</h2>
+                <button id="close-delete-modal" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="delete-message">Are you sure you want to delete this item?</p>
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-delete" class="btn btn--outline">Cancel</button>
+                <button id="confirm-delete" class="btn btn--primary">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
