@@ -282,6 +282,6 @@ def insert_new_bill(
 
 # endregion
 
-if __name__ == "__main__":
-    with SessionLocal() as session:
-        print(f"{session.query(Contas).first().id}")
+#if __name__ == "__main__":
+#    with SessionLocal() as session:
+#        print(f"{session.query(Contas).first().id}")
