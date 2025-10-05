@@ -3,6 +3,9 @@ from passlib.hash import sha256_crypt
 from sqlalchemy import create_engine, Column, Integer, String, Date, Float, Text, ForeignKey, DateTime, JSON
 from sqlalchemy.orm import Session, declarative_base, sessionmaker, relationship
 from sqlalchemy.sql import func
+from dotenv import load_dotenv
+
+load_dotenv(".env")
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 

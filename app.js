@@ -184,6 +184,48 @@ class EnergyBillManager {
         this.showAuthPage();
     }
 
+    async login_test(email, password) {
+        const response = await fetch(
+            "http://localhost:8000/users/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+                body: JSON.stringify({ email, password })
+            }
+        );
+
+        if (!response.ok) {
+            const err = await response.json();
+            alert(err.detail || "Login failed");
+            throw new Error(err.detail);
+        }
+
+        const data = await response.json();
+        
+        // Save JWT token (e.g. localStorage)
+        localStorage.setItem("ebm_token", data.access_token);
+        this.currentUser = data.user;
+
+        // Save user info if needed
+        localStorage.setItem("user", JSON.stringify(data.user));
+        this.showToast('Login successful!', 'success');
+        
+        console.log('3')
+        // Clear login form
+        const loginForm = document.getElementById('login-form');
+        if (loginForm) {
+            loginForm.reset();
+        }
+        
+        console.log('1')
+        // Show main app after successful login with slight delay to ensure DOM is ready
+        setTimeout(() => {
+            this.showMainApp();
+        }, 100);
+        
+        console.log('2')
+        return true;
+    }
+
     login(email, password) {
         const users = JSON.parse(localStorage.getItem('ebm_users') || '[]');
         const user = users.find(u => u.email === email && u.password === password);
@@ -1398,7 +1440,7 @@ class EnergyBillManager {
                 e.preventDefault();
                 const email = document.getElementById('login-email').value;
                 const password = document.getElementById('login-password').value;
-                this.login(email, password);
+                this.login_test(email, password);
             });
         }
 
