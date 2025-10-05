@@ -3,18 +3,18 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from database.db import authenticate_user, SessionLocal
+from database.db import authenticate_user, SessionLocal, register_user, update_user_status, get_all_clientes
 from jose import jwt
 from datetime import datetime, timedelta
 
+# Define constants by loading environment variables
 load_dotenv(".env")
-
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
 
+# Initialize FastAPI app
 app = FastAPI()
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # For dev: allow all; use ["http://127.0.0.1:5500"] for production
@@ -57,3 +57,42 @@ def login(data: dict, db: Session = Depends(get_db)):
             "status": user.status
         }
     }
+
+@app.post("/users/register")
+def register_user(data: dict, db: Session = Depends(get_db)):
+    user, error = register_user(db, data["username"], data["email"], data["password"], data["role"])
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+    return {
+        "message": "User registered successfully",
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "role": user.role,
+            "status": user.status
+        }
+    }
+
+@app.put("/users/{user_id}/status")
+def update_user_status_endpoint(user_id: int, status: str, db: Session = Depends(get_db)):
+    user, error = update_user_status(db, user_id, status)
+    if error:
+        raise HTTPException(status_code=404, detail=error)
+    return {
+        "message": f"User status updated to {status}",
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "role": user.role,
+            "status": user.status
+        }
+    }
+
+@app.get("/clientes")
+def get_clientes(db: Session = Depends(get_db)):
+    clientes, error = get_all_clientes(db)
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+    return {"clientes": clientes}
