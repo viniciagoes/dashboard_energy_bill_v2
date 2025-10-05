@@ -1,11 +1,12 @@
 import os
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from database.db import authenticate_user, SessionLocal, register_user, update_user_status, get_all_clientes
 from jose import jwt
 from datetime import datetime, timedelta
+from gen_ai.gen_ai import extract_data_from_file
 
 # Define constants by loading environment variables
 load_dotenv(".env")
@@ -96,3 +97,16 @@ def get_clientes(db: Session = Depends(get_db)):
     if error:
         raise HTTPException(status_code=400, detail=error)
     return {"clientes": clientes}
+
+@app.post("/api/bills/extract-pdf")
+async def extract_pdf_data(pdf_file: UploadFile = File(...)):
+    if pdf_file.content_type != "application/pdf":
+        raise HTTPException(status_code=400, detail="File must be a PDF")
+    
+    try:
+        extracted_data = extract_data_from_file(pdf_file.file)  # Pass the starlette UploadFile's file object
+        if extracted_data is None:
+            raise HTTPException(status_code=422, detail="Extraction returned no valid data")
+        return {"success": True, "data": extracted_data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

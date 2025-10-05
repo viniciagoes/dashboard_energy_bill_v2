@@ -14,17 +14,6 @@ Sua resposta DEVE ser um objeto JSON **válido e completo**, aderindo estritamen
 **Esquema JSON Requerido:**
 
 {
-  "cliente": {
-    "nome" : "", // Nome completo do cliente
-    "endereco" : "", // Endereço completo da instalação
-    "cpf_cnpj" : "", // CPF ou CNPJ do cliente
-    "inscricao_estadual" : "", // Inscrição Estadual (se aplicável)
-    "codigo_cliente" : "", // Código do Cliente/Unidade Consumidora
-    "codigo_instalacao" : "", // Código de Instalação/Ponto de Consumo
-    "classificacao" : "", // Classificação/Subclasse de Consumo (Ex: Residencial, Comercial)
-    "ligacao" : "", // Tipo de Ligação (Ex: Monofásico, Bifásico, Trifásico)
-    "grupo_tarifario" : "" // Grupo Tarifário (Ex: B1, A4, etc.)
-  },
   "data_conta": {
     "leitura_anterior" : "", // Data da Leitura Anterior (formato DD/MM/AAAA)
     "leitura_atual" : "", // Data da Leitura Atual (formato DD/MM/AAAA)
@@ -71,26 +60,30 @@ Sua resposta DEVE ser um objeto JSON **válido e completo**, aderindo estritamen
 load_dotenv()
 api_key = os.getenv("API_KEY")
 
-client = genai.Client(api_key=api_key)
+def validate_json(json_data):
+	try:
+		data = json.loads(json_data)
+		return True, data
+	except json.JSONDecodeError:
+		return False, None
 
-# Retrieve and encode the PDF byte
-filepath = pathlib.Path('resources/pdf_test1.pdf')
+def extract_data_from_file(uploaded_file) -> dict | None: 
+	# Create gemini client
+	client = genai.Client(api_key=api_key)
 
-response = client.models.generate_content(
-  model="gemini-2.5-flash",
-  contents=[
-      types.Part.from_bytes(
-        data=filepath.read_bytes(),
-        mime_type='application/pdf',
-      ),
-      PROMPT])
+	# TODO: change to accept uploaded file
 
-print(response.text)
-
-try:
-  data = json.loads(response.text[8:-4])
-  with open('output.json', 'w', encoding='utf-8') as f:
-    json.dump(data, f, ensure_ascii=False, indent=2)
-  print("JSON file written successfully.")
-except json.JSONDecodeError:
-  print("response.text is not a valid JSON.")
+	response = client.models.generate_content(
+	model="gemini-2.5-flash",
+	contents=[
+		types.Part.from_bytes(
+			data=uploaded_file.read_bytes(),
+			mime_type='application/pdf',
+		),
+		PROMPT])
+	
+	is_valid, data = validate_json(response.text)
+	if is_valid:
+		return data
+	
+	return None
