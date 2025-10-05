@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from db import authenticate_user, SessionLocal
+from database.db import authenticate_user, SessionLocal
 from jose import jwt
 from datetime import datetime, timedelta
 
