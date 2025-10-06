@@ -1,3 +1,5 @@
 .venv/
 resources/
 .env
+.zed/
+fast_api_test/__pycache__/
